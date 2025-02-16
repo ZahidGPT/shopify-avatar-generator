@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
 
 export default function GenerateAvatar() {
+    const router = useRouter();
     const [uploadedImage, setUploadedImage] = useState(null);
     const [generatedImage, setGeneratedImage] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [progress, setProgress] = useState('');
     const [error, setError] = useState(null);
     const [selectedAvatar, setSelectedAvatar] = useState({
@@ -43,8 +45,9 @@ export default function GenerateAvatar() {
     // Call API to generate face swap image
     const generateAvatar = async () => {
         try {
-            setIsLoading(true);
-            setProgress('Uploading image...');
+            setIsGenerating(true);
+            setError(null);
+
             const response = await fetch("/api/generate-avatar", {
                 method: "POST",
                 headers: {
@@ -54,32 +57,32 @@ export default function GenerateAvatar() {
                     image: uploadedImage,
                 }),
             });
-        
+
             const data = await response.json();
-            console.log("Complete API Response:", JSON.stringify(data, null, 2));
-            
+            console.log("API Response:", data);
+
             if (data.error) {
                 throw new Error(data.error);
             }
-            
-            if (!data.generatedImage) {
-                throw new Error("No generated image in response");
+
+            if (typeof data.generatedImage === 'string') {
+                setGeneratedImage(data.generatedImage);
+                localStorage.setItem('generatedImage', data.generatedImage);
+            } else if (Array.isArray(data.generatedImage)) {
+                setGeneratedImage(data.generatedImage[0]);
+                localStorage.setItem('generatedImage', data.generatedImage[0]);
             }
 
-            // Handle array or single string output
-            const imageUrl = Array.isArray(data.generatedImage) 
-                ? data.generatedImage[0] 
-                : data.generatedImage;
-            
-            setGeneratedImage(imageUrl);
-            setProgress('Generating avatar...');
         } catch (error) {
             console.error("Error generating avatar:", error);
-            setError(error.message);
+            setError(error.message || "Error generating image!");
         } finally {
-            setIsLoading(false);
-            setProgress('Complete!');
+            setIsGenerating(false);
         }
+    };
+
+    const handlePreview = () => {
+        router.push('/preview');
     };
 
     return (
@@ -231,13 +234,13 @@ export default function GenerateAvatar() {
                     <div className="flex flex-col items-center">
                         <button
                             onClick={generateAvatar}
-                            disabled={isLoading}
+                            disabled={isGenerating}
                             className="px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded text-white font-bold"
                         >
-                            {isLoading ? "Generating..." : "Generate Avatar"}
+                            {isGenerating ? "Generating..." : "Generate Avatar"}
                         </button>
 
-                        {isLoading && <div>Please wait, generating your avatar...</div>}
+                        {isGenerating && <div>Please wait, generating your avatar...</div>}
 
                         {progress && <div className="text-sm text-gray-600">{progress}</div>}
 
@@ -256,6 +259,17 @@ export default function GenerateAvatar() {
                             </div>
                         )}
                     </div>
+
+                    {generatedImage && (
+                        <div className="mt-8">
+                            <button
+                                onClick={handlePreview}
+                                className="w-full py-3 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700"
+                            >
+                                Preview on Product
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

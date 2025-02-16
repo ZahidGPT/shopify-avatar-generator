@@ -5,7 +5,7 @@ const replicate = new Replicate({
 });
 
 export const config = {
-  maxDuration: 60
+  maxDuration: 300
 };
 
 export async function POST(req) {
@@ -32,8 +32,8 @@ export async function POST(req) {
 
     console.log("Prediction created:", prediction.id);
 
-    // Maximum number of polling attempts (30 seconds total)
-    const maxAttempts = 30;
+    // Increased maximum attempts to 60 (1 minute)
+    const maxAttempts = 60;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -54,11 +54,12 @@ export async function POST(req) {
         throw new Error("Face swap generation failed");
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Increased wait time between attempts to 2 seconds
+      await new Promise(resolve => setTimeout(resolve, 2000));
       attempts++;
     }
 
-    throw new Error("Generation timed out");
+    throw new Error("Generation timed out - please try again");
 
   } catch (error) {
     console.error("Error details:", error);
