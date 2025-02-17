@@ -5,7 +5,7 @@ const replicate = new Replicate({
 });
 
 export const config = {
-  maxDuration: 300
+  maxDuration: 300  // 5 minutes
 };
 
 export async function POST(req) {
@@ -20,20 +20,18 @@ export async function POST(req) {
       });
     }
 
-    const avatarImage = "https://replicate.delivery/pbxt/MT8BpvahV4TDIunSeLb2OEY7PI8NS3O34gajgGuIRAKf9bzN/il_1588xN.6451848706_f1ym.webp";
-
     const prediction = await replicate.predictions.create({
       version: "278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34",
       input: {
         swap_image: image,
-        input_image: avatarImage,
+        input_image: "https://replicate.delivery/pbxt/MT8BpvahV4TDIunSeLb2OEY7PI8NS3O34gajgGuIRAKf9bzN/il_1588xN.6451848706_f1ym.webp",
       }
     });
 
     console.log("Prediction created:", prediction.id);
 
-    // Increased maximum attempts to 60 (1 minute)
-    const maxAttempts = 60;
+    // Increase timeout and polling interval
+    const maxAttempts = 60;  // 2 minutes total with 2-second intervals
     let attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -42,7 +40,7 @@ export async function POST(req) {
 
       if (finalPrediction.status === "succeeded") {
         return new Response(JSON.stringify({ 
-          generatedImage: finalPrediction.output,
+          generatedImage: finalPrediction.output[0],
           status: "succeeded"
         }), { 
           status: 200,
@@ -54,7 +52,7 @@ export async function POST(req) {
         throw new Error("Face swap generation failed");
       }
 
-      // Increased wait time between attempts to 2 seconds
+      // Wait for 2 seconds before next attempt
       await new Promise(resolve => setTimeout(resolve, 2000));
       attempts++;
     }
