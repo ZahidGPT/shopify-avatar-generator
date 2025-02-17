@@ -85,6 +85,17 @@ export default function GenerateAvatar() {
         router.push('/preview');
     };
 
+    function startCustomization(productId, variantId, productTitle, price) {
+        const productDetails = {
+            productId: productId,
+            variantId: variantId,
+            title: productTitle,
+            price: price
+        };
+        localStorage.setItem('selectedProduct', JSON.stringify(productDetails));
+        window.location.href = 'https://your-app-url.vercel.app/generate';
+    }
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto">
